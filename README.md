@@ -12,6 +12,14 @@ The code comes in two parts: painting and estimation. Painting is done via vanil
 * dopainting_cp.R: uses the provided "readPaintings" functions to read raw fs painting data.
 * dopainting_hapmix.R: uses read.table and manually constructs the data in the desired format.
 
+To use wiht ChromoPainter you need to run 
+
+```{sh}
+cd subsetdata
+./dofs.sh
+cd ..
+```
+
 ### File format:
 we use a list containing:
 - for each chromosome:
