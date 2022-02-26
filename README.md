@@ -6,25 +6,32 @@ The idea is to take any measure of genome-wide painting (such as ancestry estima
 
 ## How to use these files
 
-The code comes in two parts: painting and estimation. Painting is done via vanilla "fs", or on the direct output of hapmix. The scripts run through this:
+The code comes in two parts: painting and estimation. Painting is done via vanilla "fs", or on the direct output of hapmix. The scripts run through this.
 
 ### Top level files:
 * dopainting_cp.R: uses the provided "readPaintings" functions to read raw fs painting data.
 * dopainting_hapmix.R: uses read.table and manually constructs the data in the desired format.
 
-To use wiht ChromoPainter you need to run 
+### Input data generation
+To use with **ChromoPainter** you need to run finestructure:
 
 ```{sh}
 cd subsetdata
-./dofs.sh
+./dofs.sh ## Take a look at this file for how to do the painting
 cd ..
 ```
+
+This creates copying probabilities in files called 
+`subsetdata/test/stage7/test_stage7_tmp_mainrun.linked_file<X>_ind<Y>.copyprobsperlocus.out.gz`
+for each chromosome <X> and individual <Y>.
+
+To use with **HAPMIX** we have provided tha output of HAPMIX
 
 ### File format:
 we use a list containing:
 - for each chromosome:
   - for each target population
-	A dataframe containing the painting probabilty for snps (rows) against haplotypes (columns)
+	A dataframe containing the painting probability for snps (rows) against haplotypes (columns)
 
 The is assumed to be called "alllist" which can then be processed by sourcing "getpainting.R". Along with some other key parameters:
  

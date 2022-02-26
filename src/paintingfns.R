@@ -169,40 +169,39 @@ readDonorTable<-function(donortabfile,recippop=NULL){
 }
 
 readHaps<-function(tfiles,mypops,nhapstot,nsnps,ninds,ploidy=2,verbose=TRUE){
+    ## Read in the painting probabilities per haplotype from chromopainter in population model
+    ## return these results as a list for each donor population
+    ## tfiles should refer to only a single chromosome
+    
   nhapstot<-ploidy*ninds
-  header<-read.table(tfiles[1],nrows=1,as.is=T)[1,]
+  header<-read.table(tfiles[1],nrows=1,as.is=T)[1,-1]
   paintingmat<-matrix(0,nrow=nsnps,ncol=nhapstot)
   colnames(paintingmat)<-paste0("hap",1:nhapstot)
   paintinglist<-list()
   
   for(i in 1:length(mypops)) paintinglist[[i]]<-paintingmat
-
+  names(paintinglist) <- names(mypops)
   hapon<-1
   for (tfon in 1:length(tfiles) ) {
     tf<-tfiles[tfon]
     if(verbose) print(paste("Computing population paintings in file number",tfon,"(",tf,")"))
     for(tindon in 1:indsperfile) {
-      if(verbose&&indsperfile>1) print(paste("Computing population painting for individual ",tindon,"from that file"))
-      hap1<-read.table(tf,skip=1+(nsnps+1)*(ploidy*tindon-ploidy)+1,nrows=nsnps,as.is=T)
-      colnames(hap1)<-header
-      if (ploidy==2) {
-        hap2<-read.table(tf,skip=1+(nsnps+1)*(2*tindon-1)+1,nrows=nsnps,as.is=T)
-        colnames(hap2)<-header
-        painting2<-matColSums(hap2,mypops)
-      }
-      painting1<-matColSums(hap1,mypops)
-      for(i in 1:dim(painting1)[2]){
-        painting1[painting1[,i]>1,i]<-1
-        painting1[painting1[,i]<0,i]<-0
-        paintinglist[[i]][, hapon]<-painting1[,i]
+        if(verbose&&indsperfile>1)
+            print(paste("Computing population painting for individual ",tindon,"from that file"))
+        hap1<-read.table(tf,skip=1+(nsnps+1)*(ploidy*tindon-ploidy)+1,nrows=nsnps,as.is=T,row.names=1)
+        colnames(hap1)<-header
         if (ploidy==2) {
-          painting2[painting1[,i]>1,i]<-1
-          painting2[painting1[,i]<0,i]<-0
-          paintinglist[[i]][, hapon+1]<-painting2[,i]
+            hap2<-read.table(tf,skip=1+(nsnps+1)*(2*tindon-1)+1,nrows=nsnps,as.is=T,row.names=1)
+            colnames(hap2)<-header
         }
-      }
-      hapon<-hapon+ploidy
-      if(tfon==1) for(i in 1:dim(painting1)[2]) rownames(paintinglist[[i]])<-hap1[,1]
+        for(i in 1:dim(hap1)[2]){
+            paintinglist[[i]][, hapon]<-hap1[,i]
+            if (ploidy==2) {
+                paintinglist[[i]][, hapon+1]<-hap2[,i]
+            }
+        }
+        hapon<-hapon+ploidy
+        if(tfon==1) for(i in 1:dim(hap1)[2]) rownames(paintinglist[[i]])<-rownames(hap1)
     }
   }
   for(i in 1:length(paintinglist)){
@@ -413,6 +412,9 @@ readParam<-function(paramfile){
 readPaintings<-function(recomblist,copyprobslist,mypops,
                         indsperfile=1,ploidy=2,
                         saveeach=TRUE,loadeach=FALSE,keeplist=TRUE,verbose=TRUE) {
+    ## Given a list of (all) recombination files and copyprobs files
+    ## As well as a list of target populations
+    ## read the data in!
   if(loadeach & saveeach) saveeach<-FALSE
   urecomb<-unique(recomblist)
   nfiles<-length(urecomb)
@@ -429,10 +431,10 @@ readPaintings<-function(recomblist,copyprobslist,mypops,
     if(verbose & length(urecomb)>1) print(paste("Processing recombinination file",recfileon,"of",length(urecomb),"called",urecomb[recfileon],"containing",length(tfiles),"files"))
 
     if(loadeach){
-      paintinglist<-readRDS(file=sub(".recombfile",".summedpainting.RDS",urecomb[recfileon]))
+      paintinglist<-readRDS(file=sub("\\.[a-z]*$",".summedpainting.RDS",urecomb[recfileon]))
     }else{
       paintinglist<-readHaps(tfiles,mypops,nhapstot,nsnps,ninds,ploidy=ploidy,verbose=verbose)
-      if(saveeach) saveRDS(paintinglist,file=sub(".recombfile",".summedpainting.RDS",urecomb[recfileon]))
+      if(saveeach) saveRDS(paintinglist,file=sub("\\.[a-z]*$",".summedpainting.RDS",urecomb[recfileon]))
     }
     if(keeplist) alllist[[recfileon]]<-paintinglist
   }
@@ -530,4 +532,12 @@ writeSignifRegions<-function(pvalsnpwindows,rootname="poibinranges_",fdrregions=
     if(!any(is.null(fdrregions))) tdat<-cbind(tdat,minfdr=fdrregions[[i]])
     write.table(tdat,file=paste0(rootname,names(pvalsnpwindows)[i],".txt"),quote=F,row.names=F,col.names=T,sep=",")
   }
+}
+
+readIds<-function(idfile){
+    allids=read.table(idfile,as.is=T)
+    allids=allids[allids[,3]==1,,drop=FALSE]
+    upops=unique(allids[,2])
+    names(upops)=upops
+    lapply(upops,function(x)allids[allids[,2]==x,1])
 }
