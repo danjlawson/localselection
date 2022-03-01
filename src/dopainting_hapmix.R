@@ -4,7 +4,7 @@ rootname<-"../hapmixtestout/test.ANCPROB"
 rootnamein<-"../hapmixtest/test.ANCPROB"
 system("mkdir -p ../hapmixtestout")
 
-## Lastly, we negeed to know the populations to be contrasted
+## Lastly, we need to know the populations to be contrasted
 mypops<-list()
 for(i in 1:2) mypops[[i]]<-paste0("IND",(i-1)*20+1:20)
 names(mypops)<-c("EUR","AFR")
@@ -12,7 +12,8 @@ names(mypops)<-c("EUR","AFR")
 indsperfile<-1 # and the number of individuals in those samples files
 npops<-length(mypops)
 popnames<-names(mypops)
-
+chromosomegap<-1e-3
+    
 ## Manual reading of data
 allin<-paste0(rootnamein,".",1:2,"")
 mydata<-lapply(allin,read.table)
