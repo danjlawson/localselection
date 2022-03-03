@@ -23,7 +23,7 @@ for(i in 1:length(localanc)) {
   rownames(alllist[[i]][[1]])=g.loc[[i]]
   rownames(alllist[[i]][[2]])=g.loc[[i]]
 }
-#rm(mydata)
+rm(localanc)
 gc()
 
 
