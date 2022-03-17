@@ -168,19 +168,19 @@ readDonorTable<-function(donortabfile,recippop=NULL){
   tlist
 }
 
-readHaps<-function(tfiles,mypops,nhapstot,nsnps,ninds,ploidy=2,verbose=TRUE){
+readHaps<-function(tfiles,donorpops,nhapstot,nsnps,ninds,ploidy=2,verbose=TRUE){
     ## Read in the painting probabilities per haplotype from chromopainter in population model
     ## return these results as a list for each donor population
     ## tfiles should refer to only a single chromosome
     
   nhapstot<-ploidy*ninds
-  header<-read.table(tfiles[1],nrows=1,as.is=T)[1,-1]
+  header<-read.table(tfiles[1],nrows=1,as.is=T)[1,]
   paintingmat<-matrix(0,nrow=nsnps,ncol=nhapstot)
   colnames(paintingmat)<-paste0("hap",1:nhapstot)
   paintinglist<-list()
   
-  for(i in 1:length(mypops)) paintinglist[[i]]<-paintingmat
-  names(paintinglist) <- names(mypops)
+  for(i in 1:length(donorpops)) paintinglist[[i]]<-paintingmat
+  names(paintinglist) <- donorpops
   hapon<-1
   for (tfon in 1:length(tfiles) ) {
     tf<-tfiles[tfon]
@@ -188,20 +188,22 @@ readHaps<-function(tfiles,mypops,nhapstot,nsnps,ninds,ploidy=2,verbose=TRUE){
     for(tindon in 1:indsperfile) {
         if(verbose&&indsperfile>1)
             print(paste("Computing population painting for individual ",tindon,"from that file"))
-        hap1<-read.table(tf,skip=1+(nsnps+1)*(ploidy*tindon-ploidy)+1,nrows=nsnps,as.is=T,row.names=1)
+        hap1<-read.table(tf,skip=1+(nsnps+1)*(ploidy*tindon-ploidy)+1,
+                         nrows=nsnps,as.is=T)
         colnames(hap1)<-header
         if (ploidy==2) {
-            hap2<-read.table(tf,skip=1+(nsnps+1)*(2*tindon-1)+1,nrows=nsnps,as.is=T,row.names=1)
+            hap2<-read.table(tf,skip=1+(nsnps+1)*(2*tindon-1)+1,
+                             nrows=nsnps,as.is=T)
             colnames(hap2)<-header
         }
-        for(i in 1:dim(hap1)[2]){
-            paintinglist[[i]][, hapon]<-hap1[,i]
+        for(i in 1:(dim(hap1)[2]-1)){
+            paintinglist[[i]][, hapon]<-hap1[,i+1]
             if (ploidy==2) {
-                paintinglist[[i]][, hapon+1]<-hap2[,i]
+                paintinglist[[i]][, hapon+1]<-hap2[,i+1]
             }
         }
         hapon<-hapon+ploidy
-        if(tfon==1) for(i in 1:dim(hap1)[2]) rownames(paintinglist[[i]])<-rownames(hap1)
+        if(tfon==1) for(i in 1:(dim(hap1)[2]-1)) rownames(paintinglist[[i]])<-as.character(hap1[,1])
     }
   }
   for(i in 1:length(paintinglist)){
@@ -239,7 +241,7 @@ getMeanPainting<-function(alllist,pops=NA,chromosomegap=100000,naends=0,fn=rowMe
   if(any(is.na(pops))) {
     colnames(ret)<-c("chromo","pos","pos0",paste0("pop",1:(dim(ret)[2]-1)))
   }else{
-    colnames(ret)<-c("chromo","pos","pos0",names(pops))
+    colnames(ret)<-c("chromo","pos","pos0",pops)
   }
   ret
 }
@@ -409,7 +411,7 @@ readParam<-function(paramfile){
   list(iddata=iddata,paramdata=paramdata,gtout=gtout,idfile=idfile,copyvector_file=copyvector_file,recippop=recippop,donorpops=donorpops)
 }
 
-readPaintings<-function(recomblist,copyprobslist,mypops,
+readPaintings<-function(recomblist,copyprobslist,donorpops,
                         indsperfile=1,ploidy=2,
                         saveeach=TRUE,loadeach=FALSE,keeplist=TRUE,verbose=TRUE) {
     ## Given a list of (all) recombination files and copyprobs files
@@ -433,7 +435,7 @@ readPaintings<-function(recomblist,copyprobslist,mypops,
     if(loadeach){
       paintinglist<-readRDS(file=sub("\\.[a-z]*$",".summedpainting.RDS",urecomb[recfileon]))
     }else{
-      paintinglist<-readHaps(tfiles,mypops,nhapstot,nsnps,ninds,ploidy=ploidy,verbose=verbose)
+      paintinglist<-readHaps(tfiles,donorpops,nhapstot,nsnps,ninds,ploidy=ploidy,verbose=verbose)
       if(saveeach) saveRDS(paintinglist,file=sub("\\.[a-z]*$",".summedpainting.RDS",urecomb[recfileon]))
     }
     if(keeplist) alllist[[recfileon]]<-paintinglist

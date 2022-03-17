@@ -43,18 +43,20 @@ source("paintingfns.R")
 ## Read the data
 
 if(!exists("alllist")){
-    alllist<-readPaintings(recomblist,copyprobslist,mypops=mypops,
+    alllist<-readPaintings(recomblist,copyprobslist,donorpops=donorpops,
                            indsperfile=indsperfile,ploidy=ploidy,loadeach=loadrds)
 }
 
 # And this is how we reload from the save RDS objects
 # alllist<-readPaintings(recomblist,copyprobslist,indsperfile=1,ploidy=2,loadeach=TRUE)
+npops<-length(donorpops)
+
 
 if(!exists("chromosomegap")) chromosomegap<-5e5 # how far we treat different chromosomes as being
 
 ## Get the mean painting; this is useful as it provides the reference info for the whole set of SNPs
 if(!loadrds){
-  meanpaintingall<-getMeanPainting(alllist,pops=mypops,chromosomegap = chromosomegap,naends=0)
+  meanpaintingall<-getMeanPainting(alllist,pops=donorpops,chromosomegap = chromosomegap,naends=0)
   saveRDS(meanpaintingall,file=paste0(rootname,"_meanpainting.RDS"))
 }else{
   meanpaintingall<-readRDS(file=paste0(rootname,"_meanpainting.RDS"))
@@ -80,8 +82,8 @@ if(loadrds){
   prodpaintingall<-readRDS(file=paste0(rootname,"_prodpaintingall.RDS"))
   prodpaintingall0<-readRDS(file=paste0(rootname,"_prodpaintingall0.RDS"))
 }else{
-  prodpaintingall<-getMeanPainting(alllist,pops=mypops,chromosomegap = chromosomegap,naends=0,fn=rowprod)
-  prodpaintingall0<-getMeanPainting(alllist,pops=mypops,chromosomegap = chromosomegap,naends=0,fn=rowprod0)
+  prodpaintingall<-getMeanPainting(alllist,pops=donorpops,chromosomegap = chromosomegap,naends=0,fn=rowprod)
+  prodpaintingall0<-getMeanPainting(alllist,pops=donorpops,chromosomegap = chromosomegap,naends=0,fn=rowprod0)
   saveRDS(prodpaintingall,file=paste0(rootname,"_prodpaintingall.RDS"))
   saveRDS(prodpaintingall0,file=paste0(rootname,"_prodpaintingall0.RDS"))
 }
@@ -92,8 +94,8 @@ pvalprod0[,-(1:3)]<-1 -pvalprod0[,-(1:3)]
 
 #apply(prodpaintingall0[,-(1:3)],2,max)
 
-pvalprodwindows<-getSnpRangesPval(pvalprod,rep(0.05,length(popnames)),snpwindow = 200)
-pvalprod0windows<-getSnpRangesPval(pvalprod0,rep(0.05,length(popnames)),snpwindow = 200)
+pvalprodwindows<-getSnpRangesPval(pvalprod,rep(0.05,length(donorpops)),snpwindow = 200)
+pvalprod0windows<-getSnpRangesPval(pvalprod0,rep(0.05,length(donorpops)),snpwindow = 200)
 
 #####
 if(!loadrds){
@@ -114,7 +116,7 @@ if(!loadrds){
 #    for(i in which(apply(td[,-(1:3)],2,min)<0.05)) {
     for(i in 1:(dim(td)[2]-3)) {
       jj<-i
-      mypng(file=paste0(trootname,popnames[i],"_fdr.png"),height=500,width=1600)
+      mypng(file=paste0(trootname,donorpops[i],"_fdr.png"),height=500,width=1600)
       par(mfrow=c(1,1),cex=1.2)
       plot(td[,2],-log10(td[,jj+3]),type="n",frame.plot=F,xlab="Genome Position",ylab="-log10(Probability)",main=colnames(td)[jj+3])
       tmin<-1
@@ -136,7 +138,7 @@ source("paintingfns.R")
 if(loadrds){
   signiflist<-readRDS(file=paste0(rootname,"_signiflist.RDS"))
 }else{
-  signiflist<-getPvalMatrix(alllist,names(mypops),naends=0) # 
+  signiflist<-getPvalMatrix(alllist,donorpops,naends=0) # 
   saveRDS(signiflist,file=paste0(rootname,"_signiflist.RDS"))
 }
 #signifmat<-signiflist$signifmat
@@ -159,7 +161,7 @@ if(!loadrds){
 if(!loadrds){
 #######################
   for(i in 1:npops){
-    mypng(file=paste0(rootname,"_MeanPainting",popnames[i],".png"),height=600,width=1600)
+    mypng(file=paste0(rootname,"_MeanPainting",donorpops[i],".png"),height=600,width=1600)
     par(mfrow=c(1,1),cex=1.2,mar=c(4,5,5,1))
       jj<-i
       plot(meanpaintingall[,2],meanpaintingall[,jj+3],type="n",frame.plot=F,xlab="Genome Position",ylab="Mean Painting",main=colnames(meanpaintingall)[jj+3])
@@ -172,7 +174,7 @@ if(!loadrds){
 
 
   for(i in 1:npops){
-    mypng(file=paste0(rootname,"_Distribution",popnames[i],".png"),height=600,width=800)
+    mypng(file=paste0(rootname,"_Distribution",donorpops[i],".png"),height=600,width=800)
     par(mfrow=c(1,1),cex=1.2,mar=c(4,5,5,1))
     jj<-i
     meanx<-signiflist$p0[,i]
@@ -192,7 +194,7 @@ if(!loadrds){
   mypng(file=paste0(rootname,"_ecdf.png"),height=500,width=500)
   plot(ecdf(signiflist$p0[,1]),xlim=c(0,1),main="Empirical CDF")
   for(i in 2:dim(signiflist$p0)[2]) lines(ecdf(signiflist$p0[,i]),col=i)
-  legend("left",legend=popnames,col=1:length(popnames),text.col=1:length(popnames),lty=1,pch=19)
+  legend("left",legend=donorpops,col=1:length(donorpops),text.col=1:length(donorpops),lty=1,pch=19)
   dev.off()
   
 }
@@ -310,7 +312,7 @@ if(!loadrds){
 #if(TRUE) {
 #######################
   for(i in 1:npops){
-    mypng(file=paste0(rootname,"_GenomeWidePvals",popnames[i],"_fdr.png"),height=1000,width=1600)
+    mypng(file=paste0(rootname,"_GenomeWidePvals",donorpops[i],"_fdr.png"),height=1000,width=1600)
     par(mfrow=c(2,1),cex=1.2,mar=c(4,5,5,1))
     for(j in 1:2){
       jj<-(i-1)*2+j
@@ -358,12 +360,12 @@ if(ploidy==1) {print("Haploid mode")
 }else if(ploidy==2) {print("Diploid mode")
 }else stop("Incorrect ploidy!")
 
-for(mypop in 1:length(mypops)) {
-  print(paste("Processing population",names(mypops)[mypop]))
+for(mypop in 1:length(donorpops)) {
+  print(paste("Processing population",donorpops[mypop]))
   tcmmat<-sapply(alllist,function(x){colMeans(x[[mypop]])})
   tcm<-colMeans(tcmmat)
-  indmat<-tcmmat[seq(1,ninds)*ploidy-(ploidy-1),]
-  if(ploidy==2) indmat<-indmat + tcmmat[seq(1,ninds)*ploidy,]
+  indmat<-tcmmat[seq(1,ninds)*ploidy-(ploidy-1),,drop=FALSE]
+  if(ploidy==2) indmat<-indmat + tcmmat[seq(1,ninds)*ploidy,,drop=FALSE]
   indmat<-t(indmat/ploidy)
   colnames(indmat)<-paste0("IND",1:ninds)
   rownames(indmat)<-paste0("CHR",1:nchr)
@@ -374,22 +376,22 @@ for(mypop in 1:length(mypops)) {
   tchromorder<-rep(ploidy*tindorder,each=ploidy)
   if(ploidy==2)tchromorder<-tchromorder +c(-1,0)
   
-  tpopfrac<-colMeans(indmat[,tindorder])
+  tpopfrac<-colMeans(indmat[,tindorder,drop=FALSE])
 
-  pdf(paste0(rootname,"_ChromosomeMeanPainting",names(mypops)[mypop],".pdf"),height=10,width=15)
-  plotFinestructure(indmat[,tindorder],labelsx=colnames(indmat)[tindorder],labelsy=rownames(indmat),labelsatx=1:ninds,labelsaty=1:nchr,cols=some.colorsEnd,ignorebelow = 0,main=paste("Mean",names(mypops)[mypop],"Painting averaged over each chromosome"),layoutd = 0.1,layoutf=0.1,cex.axis=1,colscale=c(0,1),scalenum=11)
-  title(ylab="Chromosome",xlab=paste0("Individual (sorted by ",names(mypops)[mypop]," Fraction)"),line=7)
+  pdf(paste0(rootname,"_ChromosomeMeanPainting",donorpops[mypop],".pdf"),height=10,width=15)
+  plotFinestructure(indmat[,tindorder,drop=FALSE],labelsx=colnames(indmat)[tindorder],labelsy=rownames(indmat),labelsatx=1:ninds,labelsaty=1:nchr,cols=some.colorsEnd,ignorebelow = 0,main=paste("Mean",donorpops[mypop],"Painting averaged over each chromosome"),layoutd = 0.1,layoutf=0.1,cex.axis=1,colscale=c(0,1),scalenum=11)
+  title(ylab="Chromosome",xlab=paste0("Individual (sorted by ",donorpops[mypop]," Fraction)"),line=7)
   axis(3,1:ninds,format(tpopfrac,digits=2),las=2)
-  axis(4,1:nchr,format(apply(indmat[,tindorder],1,mean),digits=2),las=2)
+  axis(4,1:nchr,format(apply(indmat[,tindorder,drop=FALSE],1,mean),digits=2),las=2)
   dev.off()
 
 
-  pdf(paste0(rootname,"_ChromosomeECDF_",names(mypops)[mypop],".pdf"),height=6,width=10)
+  pdf(paste0(rootname,"_ChromosomeECDF_",donorpops[mypop],".pdf"),height=6,width=10)
   for(i in 1:nchr){
 #    tmp<-indmat[i,tindorder]/max(indmat[i,])
     tmp<-indmat[i,tindorder]
     if(i==1){
-      plot(ecdf(tmp),xlab=paste(names(mypops)[mypop],"Fraction"),ylab=paste("CDF of",names(mypops)[mypop],"Fraction"),main=paste("ECDF of Chromosomes"),xlim=c(0,1.2))
+      plot(ecdf(tmp),xlab=paste(donorpops[mypop],"Fraction"),ylab=paste("CDF of",donorpops[mypop],"Fraction"),main=paste("ECDF of Chromosomes"),xlim=c(0,1.2))
     }
     else lines(ecdf(tmp),col=i,lty=i,pch=i)
   }
@@ -397,20 +399,20 @@ for(mypop in 1:length(mypops)) {
   abline(v=c(0,1))
   dev.off()
 
-  sindmat<-indmat[,tindorder]
+  sindmat<-indmat[,tindorder,drop=FALSE]
   tcor<-matrix(1,nrow=dim(sindmat)[2],ncol=dim(sindmat)[2])
   for(i in 1:(dim(sindmat)[2])-1) for(j in (1+1):dim(sindmat)[2]){
-    tcor[i,j]<-tcor[j,i]<-cor(sindmat[,i],sindmat[,j])
+    tcor[i,j]<-tcor[j,i]<-cor(sindmat[,i,drop=FALSE],sindmat[,j,drop=FALSE])
   }
 
-  pdf(paste0(rootname,"_ChromosomePaintingCorrelation_",names(mypops)[mypop],".pdf"),height=10,width=12)
-  plotFinestructure(tcor,labelsx=colnames(sindmat),labelsatx=1:ninds,cols=some.colorsEnd,ignorebelow = -1,main=paste("Correlation between",names(mypops)[mypop]," chromosome paintings"),layoutd = 0.05,layoutf=0.1,cex.axis=1)
-  title(xlab=paste0("Individual (sorted by ",names(mypops)[mypop]," Fraction)"),ylab=paste0("Individual (sorted by ",names(mypops)[mypop]," Fraction)"),line=6)
+  pdf(paste0(rootname,"_ChromosomePaintingCorrelation_",donorpops[mypop],".pdf"),height=10,width=12)
+  plotFinestructure(tcor,labelsx=colnames(sindmat),labelsatx=1:ninds,cols=some.colorsEnd,ignorebelow = -1,main=paste("Correlation between",donorpops[mypop]," chromosome paintings"),layoutd = 0.05,layoutf=0.1,cex.axis=1)
+  title(xlab=paste0("Individual (sorted by ",donorpops[mypop]," Fraction)"),ylab=paste0("Individual (sorted by ",donorpops[mypop]," Fraction)"),line=6)
   dev.off()
 
 #################
   ## Still needs bringing up to standards
-  pdir<-paste0(rootname,"Paintings",names(mypops)[mypop])
+  pdir<-paste0(rootname,"Paintings",donorpops[mypop])
   system(paste("mkdir -p",pdir),intern=TRUE) ## WON'T WORK ON WINDOWS
 
   tmatrange<-ceiling(max(c(
@@ -425,7 +427,7 @@ for(mypop in 1:length(mypops)) {
     
     tmat<-signiflist$signifmat[meanpaintingall[,1]==i,(mypop-1)*2+1:2]
 
-    mypng(paste0(pdir,"/",names(mypops)[mypop],"Painting_Chr",i,".png"),height=1200,width=2000)
+    mypng(paste0(pdir,"/",donorpops[mypop],"Painting_Chr",i,".png"),height=1200,width=2000)
 
     layout(matrix(c(2,1,3,1),nrow=2,ncol=2,byrow=TRUE),heights=c(0.75,0.25),widths = c(0.9,0.1))
     
@@ -438,7 +440,7 @@ for(mypop in 1:length(mypops)) {
     axis(2,at=scalephysicalpos,labels=scalelocs,las=2,cex.axis=2)
     
     par(mar=c(3,5,5,1))
-    image(tx,1:dim(alllist[[i]][[mypop]])[2], as.matrix(alllist[[i]][[mypop]][tx,tchromorder]),xlab="",ylab="",main=paste0("Painting for ",names(mypops)[mypop]," on Chromosome ",i,": Yellow=LOW, Blue=HIGH"),axes=F,col=some.colors,zlim=c(0,1),cex.main=1.5)
+    image(tx,1:dim(alllist[[i]][[mypop]])[2], as.matrix(alllist[[i]][[mypop]][tx,tchromorder]),xlab="",ylab="",main=paste0("Painting for ",donorpops[mypop]," on Chromosome ",i,": Yellow=LOW, Blue=HIGH"),axes=F,col=some.colors,zlim=c(0,1),cex.main=1.5)
     axis(1,round(seq(1,dim(alllist[[i]][[mypop]])[1],length.out=11)),cex.axis=1.5)
     axis(2,2*(0:(ninds-1))+1.5,1:ninds,las=1,labels=colnames(indmat)[tindorder])
     if(ploidy==2) abline(h=2*(1:(ninds-1))+0.5)
