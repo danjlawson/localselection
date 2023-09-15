@@ -1,6 +1,11 @@
-## Statistical testing for paintings
+## Anomaly detection for local ancestry painting
 
-Here is an example analysis performed using the analysis presented in Nelson et al 2017 https://onlinelibrary.wiley.com/doi/10.1111/mec.14122
+This code was used in two papers:
+
+1. [Nelson et al 2017 "Genomewide analysis of admixture and adaptation in the Africanized honeybee"](https://onlinelibrary.wiley.com/doi/10.1111/mec.14122)
+2. [Howard-McCombe et al 2023 "Genetic swamping of the critically endangered Scottish wildcat was recent and accelerated by disease"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4528485)
+
+If you use the MOSAIC code then the appropriate reference is the second. The first is for HAPMIX or ChromoPainter.
 
 The idea is to take any measure of genome-wide painting (such as ancestry estimation by hapmix, or chromosome painting) and "add up" all the individuals probability of being from a particular population. Then perform statistical testing to identify regions of the genome that are "surprisingly high" (or low) for each ancestry. This is based on a Poisson-Binomial model, as the paintings are themselves probabilities.
 
@@ -11,6 +16,7 @@ The code comes in two parts: painting and estimation. Painting is done via vanil
 ### Top level files:
 * dopainting_cp.R: uses the provided "readPaintings" functions to read raw fs painting data.
 * dopainting_hapmix.R: uses read.table and manually constructs the data in the desired format.
+* dopainting_mosaic.R: uses the MOSAIC .RData and converts the data to the desired format.
 
 ### Input data generation
 To use with **ChromoPainter** you need to run finestructure:
