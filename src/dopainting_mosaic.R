@@ -11,6 +11,7 @@ names(mypops)<-c("dom","wildcat")
 
 npops<-length(mypops)
 popnames<-names(mypops)
+donorpops=popnames
 
 ## Manual reading of data
 tmp=load(rootnamein)

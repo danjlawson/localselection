@@ -27,7 +27,9 @@ if(capabilities()[["X11"]]){ ## allow creation of PNG without X11
   mypng<-CairoPNG
 }
 
-
+if(!exists("donorpops")){
+    donorpops=popnames
+}
 source("paintingfns.R")
 
 ####################
@@ -415,15 +417,18 @@ for(mypop in 1:length(donorpops)) {
   pdir<-paste0(rootname,"Paintings",donorpops[mypop])
   system(paste("mkdir -p",pdir),intern=TRUE) ## WON'T WORK ON WINDOWS
 
+  tsf=signiflist$signifmat[,(mypop-1)*2+1:2]
+  tsf[tsf<=0]=min(tsf[tsf>0])
   tmatrange<-ceiling(max(c(
-    -log10(min(signiflist$signifmat[,(mypop-1)*2+1:2])),
+    -log10(min(tsf)),
     -log10(gwsigthresh),
     -log10(fdrlist$thresh[fdrlist$thresh>0]) ))
     )
   
   for(i in 1:length(alllist)) {
     print(paste("Chromosome",i))
-    tx<-round(seq(1,dim(alllist[[i]][[mypop]])[1],length.out=min(10000,dim(alllist[[i]][[1]])[1])))
+    tx<-round(seq(1,dim(alllist[[i]][[mypop]])[1],
+                  length.out=min(10000,dim(alllist[[i]][[1]])[1])))
     
     tmat<-signiflist$signifmat[meanpaintingall[,1]==i,(mypop-1)*2+1:2]
 
